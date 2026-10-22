@@ -1,43 +1,127 @@
-# Codex 决策与三组协作
+# Codex Decision and Three-Group Collaboration
 
-简体中文 | [English](README.en.md)
+English | [简体中文](README.zh-CN.md)
 
-`codex-decision-assistant` 以项目业务目标的第一性原则推进工作：从用户确认的最终结果、成功标准和硬约束出发，恢复本路线贡献、阶段成果、授权、预算和瓶颈，协调研究组、开发组与其他路线决策组。只有显式调用才启动；签发前、每 900 秒及收到困难或阶段结果时，检查工作能否产生支持业务目标的可核验结果。
+`codex-decision-assistant` advances a project from the first principles of its business goal. It starts with the outcome, success criteria, and hard constraints confirmed by the user. It then recovers the route's contribution, stage deliverables, authorization, budget, and bottlenecks, and coordinates research, development, and other route decision groups. The Skill starts only when explicitly invoked. Before issuing tasks, every 900 seconds, and when difficulties or stage results arrive, it checks whether the work can produce verifiable results that support the business goal.
 
-回读现有记录后，目标或必要取舍仍不清晰时，决策组必须要求用户补充，并把依赖答案的工作和资源消费停在安全点。目标明确而技术方法未知时，在授权内验证。现有路线和任务清单不能代替业务目标，测试通过或实验结束不能单独证明业务进展；可靠负面结果可以支持方向判断。
+If the goal or a necessary trade-off remains unclear after reading existing records, the decision group must ask the user for clarification. It must bring dependent work and resource use to a safe stopping point. When the goal is clear but the technical method is unknown, it validates the method within existing authorization. A route or task list cannot replace the business goal. Passing tests or finishing an experiment alone does not prove business progress; reliable negative results can inform the direction.
 
-决策组可以调整授权内顺序、暂停无效重复、组织已有证据形成结论或安排辨别验证。重大目标、验收或已批准方案变化、预算超支、同一动作超过 24 小时、fork／flush 及原合同保留事项立即交用户批准。失败历史、预算消耗和停止条件跨任务与会话延续。
+Within its authorization, the decision group can reorder work, pause ineffective repetition, draw conclusions from existing evidence, or arrange tests that distinguish competing explanations. Major changes to goals, acceptance criteria, or approved approaches require immediate user approval. So do budget overruns, the same action exceeding 24 hours, fork/flush, and matters reserved by the original contract. Failure history, budget use, and stop conditions carry across tasks and sessions.
 
-三组职责的唯一公共正文在治理源的 `governance/group-collaboration.md`。开发组全部角色用同一个开发账号，研究组与决策组各用自己的账号；真实账号及目录保存在各组私有绑定。研究可直接签发当前授权内必要工程依赖，结果直接回研究组。PR 由实际签发组创建，开发组维护、独立审查、正式批准、普通合并并收尾。
+The sole shared definition of the three groups' responsibilities is `governance/group-collaboration.md` in the governance source. All development roles use one development account; research and decision groups each use their own account. Real accounts and directories remain in each group's private bindings. Research can directly issue necessary engineering dependencies within its current authorization, and results return directly to research. The actual issuing group creates the PR. Development maintains it, performs independent review, submits formal approval, completes an ordinary merge, and closes out the work.
 
-每条路线由一个决策组负责，逻辑参与者、职责和运行环境分别声明。跨环境通过 GitHub 来源任务评论和路线入口交叉引用协作，可访问环境再使用 Agent Center 即时交接。公共任务只有一个主责路线，各路线分别判断是否采用；最初请求方、公共记录维护者和实际工程签发组各保留自己的责任。离线组下次启动时处理记录，沉默不表示接受或停工。
+Each route has one decision group. Logical participants, roles, and runtime environments are declared separately. Across environments, groups collaborate through comments on the source GitHub task and cross-references from route entry points. Agent Center provides immediate handoffs when the target environment is accessible. Each shared task has one lead route, while each consumer route decides whether to adopt the result. The original requester, shared-record maintainer, and actual engineering issuer retain their own responsibilities. An offline group processes records when it next starts; silence means neither acceptance nor stopped work.
 
-| 路径 | 用途 |
+## Rule relationships
+
+Arrows show which sources constrain each workflow. User authorization and project contracts bound all three workflows; each retains its own activation rules, writable scope, review, and completion conditions.
+
+```mermaid
+flowchart TD
+    U["User-confirmed goals<br/>authorization and project contracts"]
+    P["Common engineering principles<br/>codex-governance"]
+    C["Shared group collaboration<br/>codex-governance"]
+    D["Decision workflow<br/>codex-decision-assistant"]
+    R["Research workflow<br/>codex-strategy-research"]
+    E["Development governance<br/>codex-governance"]
+    U --> D
+    U --> R
+    U --> E
+    P --> D
+    P --> R
+    P --> E
+    C --> D
+    C --> R
+    C --> E
+```
+
+[codex-governance](https://github.com/slowchillchill/codex-governance) owns the common `governance/engineering-principles.md`, the sole cross-group rules in `governance/group-collaboration.md`, and the development lifecycle in `governance/codex-development-governance.md`. [codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) owns `research/research-workflow.md`, including research methods, data use, evidence, and independent research review. This repository owns [the decision workflow](decision/decision-workflow.md): business-goal recovery, prioritization, task issuance, supervision, and course correction within authorization.
+
+## Collaboration flow
+
+This example follows a shared dependency requested by route A and issued to development by route B's research group. The original cross-route request and the engineering task keep separate issuers and return paths.
+
+```mermaid
+sequenceDiagram
+    participant A as Route A decision group
+    participant B as Route B decision group
+    participant R as Route B research group
+    participant D as Development group
+    participant G as GitHub
+    A->>B: Request shared work on the source issue
+    Note over A,B: Requests cross environments via GitHub.<br/>B checks its contract, scope<br/>and remaining budget before accepting.
+    B->>R: Issue authorized research
+    R->>D: Issue a necessary engineering dependency
+    Note over R,D: Engineering costs count once in the same stage budget.<br/>Agent Center can supplement handoffs when reachable.
+    D-->>R: Validated branch, exact commit and PR materials
+    R->>G: Create PR as the engineering issuer
+    R-->>D: Return PR link
+    D->>D: Independent executor reviews the exact commit
+    D->>G: Formal Review and ordinary merge when requirements pass
+    D-->>R: Technical result, cost and remaining obligations
+    R-->>B: Research evidence, conclusions and cost
+    B-->>A: Return the result along the original request
+    A->>A: Validate and record this route's adoption
+```
+
+Decision groups can also issue engineering tasks directly. The actual engineering issuer creates the PR and receives the technical result. Research judges research evidence; development performs technical review and delivery; decision groups judge progress against the business goal. Each consumer route confirms its own adoption of a shared result.
+
+## Repository guide
+
+| Path | Purpose |
 | --- | --- |
-| [Skill](skills/codex-decision-assistant/SKILL.md) | 显式启动、规则定位与必要边界 |
-| [决策程序](decision/decision-workflow.md) | 恢复目标、监督判断、纠偏、签发和结果检查 |
-| [单一适配器](scripts/agent_center.py) | 按参与者选择 GitHub 或 Agent Center，分页发现记录与执行证据 |
-| [跨路线协议](docs/cross-route-protocol.md) | 来源任务消息、接收决定、结果与跨环境恢复 |
-| [项目参考](docs/projects/btc-updown-marketmaker.md) | 明确选用该项目时恢复 A/B/C 入口及公共记录维护分工 |
-| [配置模板](templates/) | 决策身份、参与者与通道私有绑定的占位示例 |
-| [安装说明](docs/installation.md) | 完整源、身份迁移及启用步骤 |
-| [验证](evaluations/validation.md) | 本地协议测试及独立行为验收的范围与结果 |
+| [Skill](skills/codex-decision-assistant/SKILL.md) | Explicit invocation, rule discovery, and required boundaries |
+| [Decision procedure](decision/decision-workflow.md) | Recover goals, supervise, correct course, issue tasks, and check results |
+| [Single adapter](scripts/agent_center.py) | Select GitHub or Agent Center by participant and paginate records and execution evidence |
+| [Cross-route protocol](docs/cross-route-protocol.md) | Source-task messages, acceptance decisions, results, and recovery across environments |
+| [Project reference](docs/projects/btc-updown-marketmaker.md) | Recover A/B/C entry points and shared-record responsibilities when this project is explicitly selected |
+| [Configuration templates](templates/) | Placeholder examples for private decision identity, participant, and channel bindings |
+| [Installation](docs/installation.md) | Complete sources, identity migration, and enablement steps |
+| [Validation](evaluations/validation.md) | Scope and results of local protocol tests and independent behavior evaluations |
 
-普通启动后从客户端选择本 Skill，再提交具体阶段请求：
+## Installation
+
+Use Python 3.11+, Git, and Codex CLI. The GitHub collaboration channel also needs GitHub CLI (`gh`). Keep a compatible, complete [codex-governance](https://github.com/slowchillchill/codex-governance) checkout for shared rules and the identity script; research coordination also needs [codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) and its installed Skill and roles.
+
+Clone the complete source and register the decision Skill in the user-level discovery directory:
+
+```bash
+git clone https://github.com/slowchillchill/codex-decision-assistant.git
+cd codex-decision-assistant
+mkdir -p "$HOME/.agents/skills"
+ln -s "$(pwd)/skills/codex-decision-assistant" \
+  "$HOME/.agents/skills/codex-decision-assistant"
+```
+
+Keep the complete checkout: the Skill follows relative links to the decision procedure, protocol, and adapter. If the destination already exists, inspect it before changing it. This user-level entry is shared by Codex profiles running under the same OS user.
+
+Before using real collaboration, follow [the installation guide](docs/installation.md) to prepare private bindings from [the templates](templates/): the governance source and each group's own GitHub identity, then the exact participants and route entry points. GitHub-only targets need no remote App Server; the optional Agent Center channel needs an accessible existing App Server, an exact thread, working directory, and Skill path. Keep real accounts, paths, credentials, and thread bindings outside repositories.
+
+Codex normally detects installed Skills automatically. If it does not appear in the selector, restart the CLI. Then invoke the Skill explicitly with a concrete stage request. Installation makes the Skill discoverable; project authorization and execution bindings govern actual work. See [the official discovery documentation](https://learn.chatgpt.com/docs/build-skills).
+
+## Usage
+
+After starting a normal session, select this Skill in the client and provide a specific stage request:
 
 ```text
 $codex-decision-assistant
-推进当前项目本路线已批准阶段。先恢复用户确认的目标、成功标准、硬约束、准确 Issues、指定 Project、预算和瓶颈。
-目标或必要取舍不清时要求我补充；跨路线从现有 GitHub 记录恢复请求、公共变化和适用成果。
-按授权直接签发研究或开发，在当前执行轮次内监督并纠偏。遇到用户保留事项立即汇报。
+Advance the approved stage for this route in the current project. First recover the user-confirmed goal, success criteria, hard constraints, exact Issues, designated Project, budget, and bottlenecks.
+Ask me to clarify any unclear goal or necessary trade-off. Recover cross-route requests, shared changes, and applicable results from existing GitHub records.
+Directly issue research or development tasks within authorization. Supervise and correct course during the current execution turn. Report user-reserved matters immediately.
 ```
 
-任务、进度和决定沿用项目现有 Issues、Projects 与裁决入口，不建立本地任务账本。监督只在当前执行轮次运行，最终回复后结束；不安装后台服务。业务源码交开发组，研究只写分配的仓库外目录。
+Tasks, progress, and decisions stay in the project's existing Issues, Projects, and decision records. No local task ledger is created. Supervision runs only during the current execution turn and ends with the final reply; no background service is installed. Development handles business source code. Research writes only to its assigned directories outside the business repository.
 
-本地验证使用 Python 3.11+ 标准库及模拟 CLI，不连接真实账号或线程：
+## Validation
+
+Local validation uses the Python 3.11+ standard library and simulated CLIs. It does not connect to real accounts or threads:
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-跨仓库身份测试默认读取相邻 `codex-governance` 的身份脚本；其他布局设置测试变量 `GOVERNANCE_SOURCE_ROOT`。真实权限、协作邀请、线程绑定和真实联调在启用阶段完成，本地模拟不证明这些条件已就绪。
+By default, cross-repository identity tests read the identity script from the adjacent `codex-governance` checkout. For other layouts, set the test variable `GOVERNANCE_SOURCE_ROOT`. Real permissions, collaborator invitations, thread bindings, and live integration are completed during enablement. Local simulations do not prove that these conditions are ready.
+
+## License
+
+This repository is licensed under the [MIT License](LICENSE). Referenced repositories retain their own licenses.
