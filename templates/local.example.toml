@@ -1,0 +1,7 @@
+# 复制到仓库外的决策私有绑定；真实账号及路径不得提交。
+[paths]
+source_root = "/absolute/path/to/codex-decision-assistant"
+
+[github.decision]
+login = "YOUR_DECISION_LOGIN"
+config_dir = "/absolute/path/to/gh-decision"

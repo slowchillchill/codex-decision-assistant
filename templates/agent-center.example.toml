@@ -1,0 +1,42 @@
+# 仅在启用阶段填写准确参与者、路线入口、线程、端点与路径。
+# 本文件不保存任务、预算或接收状态。逻辑 id 不决定 GitHub 账号；职责使用自己的私有身份绑定。
+[paths]
+source_root = "/absolute/path/to/codex-decision-assistant"
+
+[agent_center]
+cli = "/absolute/path/to/codex"
+
+[participants."decision:A"]
+role = "decision"
+transport = "agent-center"
+anchor = "https://github.com/OWNER/REPO/issues/NUMBER_A"
+endpoint = "/absolute/path/to/decision-control.sock"
+thread_id = "DECISION_THREAD_ID"
+cwd = "/absolute/path/to/project"
+skill_path = "/absolute/path/to/codex-decision-assistant/skills/codex-decision-assistant/SKILL.md"
+
+[participants."decision:B"]
+role = "decision"
+transport = "github"
+anchor = "https://github.com/OWNER/REPO/issues/NUMBER_B"
+# 跨环境仅依赖 GitHub，不填写对方的本机端点、线程或 Skill 路径。
+
+[participants."research:A"]
+role = "research"
+transport = "agent-center"
+endpoint = "/absolute/path/to/research-control.sock"
+thread_id = "RESEARCH_THREAD_ID"
+cwd = "/absolute/path/to/project"
+skill_path = "/absolute/path/to/codex-strategy-research/skills/codex-strategy-research/SKILL.md"
+
+[participants."development:A"]
+role = "development"
+transport = "agent-center"
+endpoint = "/absolute/path/to/development-control.sock"
+thread_id = "DEVELOPMENT_THREAD_ID"
+cwd = "/absolute/path/to/project"
+skill_path = "/absolute/path/to/codex-governance/skills/codex-stage-orchestrator/SKILL.md"
+
+# 旧的 [targets.decision]、[targets.research]、[targets.development] 仍可使用，
+# 其 id 与职责同名，默认使用 agent-center。相同职责存在多个实例时必须指定准确 id。
+# 配置 GitHub 通道前，按本机治理与各组身份模板完成固定身份绑定；本模板不保存认证材料。
