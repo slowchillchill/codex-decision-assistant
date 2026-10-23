@@ -4,6 +4,7 @@
 source_root = "/absolute/path/to/codex-decision-assistant"
 
 [agent_center]
+# 保留既有 CLI 路径绑定；本地传输直接使用下列 Unix WebSocket，不启动该 CLI。
 cli = "/absolute/path/to/codex"
 
 [participants."decision:A"]

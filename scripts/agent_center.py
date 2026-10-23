@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""通过 GitHub 或已有 Codex proxy 查询与传递消息；不保存任务状态。"""
+"""通过 GitHub 或已有 Codex Unix WebSocket 查询与传递消息；不保存任务状态。"""
 
 import argparse
 from contextlib import AbstractContextManager
 import json
 import os
 from pathlib import Path
-import selectors
-import subprocess
+import socket
 import sys
 import time
 import tomllib
@@ -38,18 +37,30 @@ def read_binding():
 
 
 class JsonRpcProxy(AbstractContextManager):
-    """复用 CLI 的 Unix WebSocket 传输，代理进程退出不停止 App Server。"""
+    """连接已有 Unix WebSocket；保留 cli 参数兼容绑定，不启动进程。"""
 
     def __init__(self, cli, endpoint, timeout=30):
-        self.process = subprocess.Popen(
-            [cli, "app-server", "proxy", "--sock", endpoint],
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-        )
-        self.selector = selectors.DefaultSelector()
-        self.selector.register(self.process.stdout, selectors.EVENT_READ)
-        self.buffer = b""
+        try:
+            import websocket
+        except ImportError as exc:
+            raise CenterError("Agent Center 本地通道需要 websocket-client；未连接服务") from exc
+        self.websocket = websocket
         self.sequence = 0
         self.timeout = timeout
+        stream = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            stream.settimeout(timeout)
+            stream.connect(endpoint)
+            # URL 仅生成握手头；已连接的 Unix socket 保持唯一传输，不跟随重定向。
+            self.connection = websocket.create_connection(
+                "ws://localhost/", socket=stream, suppress_origin=True,
+                timeout=timeout, redirect_limit=0,
+            )
+            if self.connection.getstatus() != 101:
+                raise CenterError("Unix WebSocket 未完成协议升级；未发送 RPC，不自动重试")
+        except (OSError, websocket.WebSocketException, CenterError) as exc:
+            stream.close()
+            raise CenterError(f"Unix WebSocket 连接失败：{exc}；未发送 RPC，不自动重试") from exc
 
     def __enter__(self):
         try:
@@ -64,8 +75,11 @@ class JsonRpcProxy(AbstractContextManager):
             raise
 
     def _send(self, message):
-        self.process.stdin.write((json.dumps(message, ensure_ascii=False) + "\n").encode())
-        self.process.stdin.flush()
+        try:
+            self.connection.settimeout(self.timeout)
+            self.connection.send(json.dumps(message, ensure_ascii=False))
+        except (OSError, self.websocket.WebSocketException) as exc:
+            raise CenterError(f"{message['method']} 传输异常：{exc}；结果未确认，先回读，禁止盲目重发") from exc
 
     def notify(self, method, params):
         self._send({"method": method, "params": params})
@@ -77,16 +91,16 @@ class JsonRpcProxy(AbstractContextManager):
             self._send({"id": request_id, "method": method, "params": params})
             deadline = time.monotonic() + self.timeout
             while True:
-                while b"\n" not in self.buffer:
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0 or not self.selector.select(remaining):
-                        raise CenterError(f"{method} 响应超时；结果未确认，先回读，禁止盲目重发")
-                    chunk = os.read(self.process.stdout.fileno(), 65536)
-                    if not chunk:
-                        raise CenterError(f"{method} 连接结束；结果未确认，先回读，禁止盲目重发")
-                    self.buffer += chunk
-                line, self.buffer = self.buffer.split(b"\n", 1)
-                response = json.loads(line)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise CenterError(f"{method} 响应超时；结果未确认，先回读，禁止盲目重发")
+                self.connection.settimeout(remaining)
+                opcode, payload = self.connection.recv_data(control_frame=True)
+                if opcode in (self.websocket.ABNF.OPCODE_PING, self.websocket.ABNF.OPCODE_PONG):
+                    continue
+                if opcode == self.websocket.ABNF.OPCODE_CLOSE:
+                    raise CenterError(f"{method} 连接结束；结果未确认，先回读，禁止盲目重发")
+                response = json.loads(payload)
                 if response.get("id") != request_id:
                     if "id" in response and "method" in response:
                         raise CenterError("收到交互请求；请在原客户端处理，不由适配器批准")
@@ -94,20 +108,13 @@ class JsonRpcProxy(AbstractContextManager):
                 if "error" in response:
                     raise CenterError(f"{method} 被服务拒绝：{response['error']}；先回读，不自动重试")
                 return response["result"]
-        except (OSError, ValueError, KeyError) as exc:
-            raise CenterError(f"{method} 传输或响应异常；结果未确认，先回读，禁止盲目重发") from exc
+        except self.websocket.WebSocketTimeoutException as exc:
+            raise CenterError(f"{method} 响应超时；结果未确认，先回读，禁止盲目重发") from exc
+        except (OSError, ValueError, KeyError, self.websocket.WebSocketException) as exc:
+            raise CenterError(f"{method} 传输或响应异常：{exc}；结果未确认，先回读，禁止盲目重发") from exc
 
     def close(self):
-        self.selector.close()
-        for stream in (self.process.stdin, self.process.stdout):
-            stream.close()
-        if self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
+        self.connection.shutdown()
 
     def __exit__(self, *exc):
         self.close()

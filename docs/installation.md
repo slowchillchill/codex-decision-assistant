@@ -1,6 +1,6 @@
 # 本地安装与启用
 
-保留完整的决策源、治理源和研究源。Skill 用相对链接读取所属程序，治理源维护唯一共同规则和 `scripts/group_github.py`，决策源维护单一协作适配器。Python 脚本需要 Python 3.11+，GitHub 通道使用支持 `gh api --paginate --slurp` 的 GitHub CLI；本地即时通道另需 Codex CLI `app-server proxy --sock`。
+保留完整的决策源、治理源和研究源。Skill 用相对链接读取所属程序，治理源维护唯一共同规则和 `scripts/group_github.py`，决策源维护单一协作适配器。Python 脚本需要 Python 3.11+，GitHub 通道使用支持 `gh api --paginate --slurp` 的 GitHub CLI；本地即时通道另需 `websocket-client`，当前验证版本为 1.8.0。仅使用 GitHub 通道时不加载该依赖。
 
 ## 先完成本地核对
 
@@ -28,7 +28,7 @@ python3 <治理源>/scripts/group_github.py --group development gh -- pr view <�
 
 把 `templates/agent-center.example.toml` 复制到仓库外，优先用非空 `CODEX_AGENT_CENTER_CONFIG`，否则 `${XDG_CONFIG_HOME:-$HOME/.config}/codex-agent-center/local.toml`。填写 `paths.source_root` 和 `participants.<id>` 的 `role`、`transport`。GitHub 目标填写准确 Issue URL `anchor`，不需要对方线程或 socket；本地目标另填 `agent_center.cli` 及原有 `endpoint`、`thread_id`、`cwd`、`skill_path`。同一参与者在各环境保持相同 id 和入口。纯 GitHub 配置可省略整个 `agent_center` 段。
 
-本地端点是已有 App Server 的 Unix 控制 socket 的绝对路径；分别确认准确线程、目录及已发现的 Skill 路径，不按标题、序号或最近活动猜测。CLI 通过正式 proxy 连接，不启动服务，不把 HTTP URL 当作 Unix 路径。旧 `targets.<group>` 绑定继续可用；同类参与者不唯一时明确 id。绑定不存任务、预算、接收或批准状态。
+本地端点是已有 App Server 的 Unix 控制 socket 的绝对路径；分别确认准确线程、目录及已发现的 Skill 路径，不按标题、序号或最近活动猜测。适配器在该 socket 上完成 HTTP Upgrade，再以 WebSocket 文本帧收发 JSON-RPC，不启动服务或代理进程，不跟随重定向。`agent_center.cli` 保留现有绑定兼容，传输不再调用该路径。握手使用的 `ws://localhost/` 仅生成协议头，传输始终使用已连接的 Unix socket，不建立 TCP 连接。旧 `targets.<group>` 绑定继续可用；同类参与者不唯一时明确 id。绑定不存任务、预算、接收或批准状态。
 
 先只读核对，再按准确 Issue 交接。`inspect` 输出可能含私有路径和执行内容，留在私有会话；公开记录使用脱敏证据。
 
@@ -49,7 +49,7 @@ PR 由实际签发组查询同头对象后创建，创建结果不明时先回�
 
 ## 协议依据与限制
 
-本地 CLI `0.163.0` 的 `app-server generate-ts --experimental` 提供了本次采用的字段；只生成临时类型，没有连接真实线程或调用模型。协议语义与[官方 App Server 文档](https://learn.chatgpt.com/docs/app-server)交叉核对：Unix socket 使用 WebSocket，proxy 提供 JSONL 输入输出；`turn/steer` 要求准确活跃轮次，Skill 用结构化输入显式加载。
+本地 CLI `0.163.0` 的 `app-server generate-ts --experimental` 提供了本次采用的字段；只生成临时类型，没有连接真实线程或调用模型。协议语义与[官方 App Server 文档](https://learn.chatgpt.com/docs/app-server)交叉核对：Unix socket 使用 HTTP Upgrade 后的 WebSocket，每个 JSON-RPC 消息占一个文本帧；JSONL 适用于 App Server 的 stdio 传输。`app-server proxy` 转发字节，不能替代 WebSocket 握手；此前向 proxy 写裸 JSONL 的实现会在握手层失败，不能以延长 `initialize` 等待时间处理。`turn/steer` 要求准确活跃轮次，Skill 用结构化输入显式加载。
 
 令牌覆盖的优先级见 [GitHub CLI 环境文档](https://cli.github.com/manual/gh_help_environment)；PR 作者不能自批的限制见 [GitHub Review 文档](https://docs.github.com/en/pull-requests/how-tos/review-pull-requests/reviewing-proposed-changes-in-a-pull-request)。这些依据不替代启用时的实际权限、仓库规则及版本兼容核对。
 

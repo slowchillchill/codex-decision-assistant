@@ -1,9 +1,16 @@
 import copy
+import base64
+from contextlib import contextmanager
+import hashlib
 import importlib.util
 import io
+import json
 from pathlib import Path
+import socket
+import struct
 import sys
 import tempfile
+import threading
 import types
 import unittest
 from unittest.mock import patch
@@ -382,44 +389,122 @@ class ParticipantCLITests(unittest.TestCase):
 
 
 class ProxyTests(unittest.TestCase):
-    def test_proxy_transport_handles_notifications_unicode_and_handshake(self):
+    @contextmanager
+    def server(self, *, close_on=None, reject_on=None, stall_on=None):
+        """独立协议夹具：要求真实 HTTP Upgrade 和客户端掩码文本帧。"""
+        requests, errors = [], []
         with tempfile.TemporaryDirectory() as directory:
-            cli = Path(directory) / "codex"
-            cli.write_text('''#!/usr/bin/env python3
-import json,sys
-assert sys.argv[1:]==['app-server','proxy','--sock','/test/socket']
-initialized=False
-for line in sys.stdin:
-    req=json.loads(line)
-    if req['method']=='initialized':
-        initialized=True
-        continue
-    if req['method']!='initialize':
-        assert initialized
-    print(json.dumps({'method':'notice','params':{'text':'中文通知'}}),flush=True)
-    print(json.dumps({'id':req['id'],'result':{'echo':req['method']}}),flush=True)
-''')
-            cli.chmod(0o755)
-            with center_module.JsonRpcProxy(str(cli), "/test/socket") as rpc:
-                self.assertEqual(rpc.call("thread/read", {"threadId": "test"}), {"echo": "thread/read"})
-            self.assertIsNotNone(rpc.process.poll())
+            endpoint = str(Path(directory) / "control.sock")
+            listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            listener.bind(endpoint)
+            listener.listen(1)
+            listener.settimeout(3)
+
+            def read_exact(connection, count):
+                result = b""
+                while len(result) < count:
+                    chunk = connection.recv(count - len(result))
+                    if not chunk:
+                        raise EOFError("夹具收到不完整帧")
+                    result += chunk
+                return result
+
+            def send_message(connection, message):
+                payload = json.dumps(message, ensure_ascii=False).encode()
+                length = len(payload)
+                header = bytes([0x81, length]) if length < 126 else b"\x81\x7e" + struct.pack("!H", length)
+                connection.sendall(header + payload)
+
+            def serve():
+                try:
+                    with listener.accept()[0] as connection:
+                        connection.settimeout(3)
+                        header = b""
+                        while not header.endswith(b"\r\n\r\n"):
+                            header += read_exact(connection, 1)
+                        lines = header.decode().split("\r\n")
+                        self.assertEqual(lines[0], "GET / HTTP/1.1")
+                        fields = dict(line.lower().split(": ", 1) for line in lines[1:] if line)
+                        self.assertEqual(fields["upgrade"], "websocket")
+                        self.assertEqual(fields["connection"], "upgrade")
+                        self.assertNotIn("origin", fields)
+                        key = next(line.split(": ", 1)[1] for line in lines if line.lower().startswith("sec-websocket-key:"))
+                        accept = base64.b64encode(hashlib.sha1(
+                            (key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode()).digest())
+                        connection.sendall(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\n"
+                                           b"Connection: Upgrade\r\nSec-WebSocket-Accept: " + accept + b"\r\n\r\n")
+                        initialized = False
+                        while True:
+                            first = connection.recv(1)
+                            if not first:
+                                return
+                            self.assertEqual(first, b"\x81")
+                            flags = read_exact(connection, 1)[0]
+                            self.assertTrue(flags & 0x80)
+                            length = flags & 0x7f
+                            if length == 126:
+                                length = struct.unpack("!H", read_exact(connection, 2))[0]
+                            elif length == 127:
+                                length = struct.unpack("!Q", read_exact(connection, 8))[0]
+                            mask = read_exact(connection, 4)
+                            payload = read_exact(connection, length)
+                            request = json.loads(bytes(value ^ mask[index % 4] for index, value in enumerate(payload)))
+                            requests.append(request)
+                            method = request["method"]
+                            if method == "initialized":
+                                initialized = True
+                                continue
+                            if method != "initialize":
+                                self.assertTrue(initialized)
+                            if method == close_on:
+                                return
+                            if method == stall_on:
+                                continue
+                            if method == reject_on:
+                                send_message(connection, {"id": request["id"], "error": {"code": -32000, "message": "固定拒绝"}})
+                                continue
+                            send_message(connection, {"method": "notice", "params": {"text": "中文通知"}})
+                            send_message(connection, {"id": request["id"], "result": {
+                                "echo": method, "params": request["params"]}})
+                except Exception as exc:
+                    errors.append(exc)
+
+            thread = threading.Thread(target=serve, daemon=True)
+            thread.start()
+            try:
+                yield endpoint, requests
+            finally:
+                thread.join(4)
+                listener.close()
+                self.assertFalse(thread.is_alive(), "隔离协议夹具未退出")
+                if errors:
+                    raise errors[0]
+
+    def test_proxy_transport_handles_notifications_unicode_and_handshake(self):
+        with self.server() as (endpoint, requests):
+            with center_module.JsonRpcProxy("/unused/codex", endpoint) as rpc:
+                params = {"threadId": "中文线程"}
+                self.assertEqual(rpc.call("thread/read", params), {"echo": "thread/read", "params": params})
+            self.assertFalse(rpc.connection.connected)
+        self.assertEqual([request["method"] for request in requests], ["initialize", "initialized", "thread/read"])
 
     def test_transport_failure_does_not_repeat_a_mutation(self):
-        with tempfile.TemporaryDirectory() as directory:
-            cli = Path(directory) / "codex"
-            log = Path(directory) / "requests"
-            cli.write_text('''#!/usr/bin/env python3
-import json,sys
-from pathlib import Path
-for line in sys.stdin:
-    req=json.loads(line)
-    with Path(__file__).with_name('requests').open('a') as f: f.write(req['method']+'\\n')
-    if req['method']=='initialized': continue
-    if req['method']=='turn/start': sys.exit(0)
-    print(json.dumps({'id':req['id'],'result':{}}),flush=True)
-''')
-            cli.chmod(0o755)
-            with center_module.JsonRpcProxy(str(cli), "/test/socket") as rpc:
+        with self.server(close_on="turn/start") as (endpoint, requests):
+            with center_module.JsonRpcProxy("/unused/codex", endpoint) as rpc:
                 with self.assertRaisesRegex(CenterError, "结果未确认"):
                     rpc.call("turn/start", {"threadId": "test", "input": []})
-            self.assertEqual(log.read_text().splitlines().count("turn/start"), 1)
+        self.assertEqual([request["method"] for request in requests].count("turn/start"), 1)
+
+    def test_rejection_does_not_repeat_a_mutation(self):
+        with self.server(reject_on="turn/start") as (endpoint, requests):
+            with center_module.JsonRpcProxy("/unused/codex", endpoint) as rpc:
+                with self.assertRaisesRegex(CenterError, "固定拒绝"):
+                    rpc.call("turn/start", {"threadId": "test", "input": []})
+        self.assertEqual([request["method"] for request in requests].count("turn/start"), 1)
+
+    def test_timeout_does_not_repeat_a_mutation(self):
+        with self.server(stall_on="turn/start") as (endpoint, requests):
+            with center_module.JsonRpcProxy("/unused/codex", endpoint, timeout=0.2) as rpc:
+                with self.assertRaisesRegex(CenterError, "响应超时"):
+                    rpc.call("turn/start", {"threadId": "test", "input": []})
+        self.assertEqual([request["method"] for request in requests].count("turn/start"), 1)
