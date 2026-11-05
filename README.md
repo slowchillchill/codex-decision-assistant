@@ -8,7 +8,7 @@ If the goal or a necessary trade-off remains unclear after reading existing reco
 
 Within its authorization, the decision group can reorder work, pause ineffective repetition, draw conclusions from existing evidence, or arrange tests that distinguish competing explanations. Major changes to goals, acceptance criteria, or approved approaches require immediate user approval. So do budget overruns, the same action exceeding 24 hours, fork/flush, and matters reserved by the original contract. Failure history, budget use, and stop conditions carry across tasks and sessions.
 
-The sole shared definition of the three groups' responsibilities is `governance/group-collaboration.md` in the governance source. All development roles use one development account; research and decision groups each use their own account. Real accounts and directories remain in each group's private bindings. Research can directly issue necessary engineering dependencies within its current authorization, and results return directly to research. The actual issuing group creates the PR. Development maintains it, performs independent review, submits formal approval, completes an ordinary merge, and closes out the work.
+The governance source maintains common principles and the cross-group handoff contract. Each group owns its internal workflow. The decision group uses its own identity, issues authorized tasks, and receives results through the original return path. When it is the actual engineering issuer, it creates the PR from the delivered branch and returns the link; it does not take over implementation or technical review.
 
 Each route has one decision group. Logical participants, roles, and runtime environments are declared separately. Across environments, groups collaborate through comments on the source GitHub task and cross-references from route entry points. Agent Center provides immediate handoffs when the target environment is accessible. Each shared task has one lead route, while each consumer route decides whether to adopt the result. The original requester, shared-record maintainer, and actual engineering issuer retain their own responsibilities. An offline group processes records when it next starts; silence means neither acceptance nor stopped work.
 
@@ -19,8 +19,8 @@ Arrows show which sources constrain each workflow. User authorization and projec
 ```mermaid
 flowchart TD
     U["User-confirmed goals<br/>authorization and project contracts"]
-    P["Common engineering principles<br/>codex-governance"]
-    C["Shared group collaboration<br/>codex-governance"]
+    P["Common principles<br/>codex-governance"]
+    C["Cross-group handoff contract<br/>read when handing off"]
     D["Decision workflow<br/>codex-decision-assistant"]
     R["Research workflow<br/>codex-strategy-research"]
     E["Development governance<br/>codex-governance"]
@@ -35,7 +35,7 @@ flowchart TD
     C --> E
 ```
 
-[codex-governance](https://github.com/slowchillchill/codex-governance) owns the common `governance/engineering-principles.md`, the sole cross-group rules in `governance/group-collaboration.md`, and the development lifecycle in `governance/codex-development-governance.md`. [codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) owns `research/research-workflow.md`, including research methods, data use, evidence, and independent research review. This repository owns [the decision workflow](decision/decision-workflow.md): business-goal recovery, prioritization, task issuance, supervision, and course correction within authorization.
+[codex-governance](https://github.com/slowchillchill/codex-governance) owns `governance/common-principles.md` and the handoff contract `governance/group-collaboration.md`. Its engineering principles and development workflow apply to engineering work. [codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) owns the research workflow. This repository owns [the decision workflow](decision/decision-workflow.md): business-goal recovery, prioritization, task issuance, supervision, and outcome assessment. The decision Skill reads its own workflow and common principles; it reads handoff and transport details when needed, without loading another group's internal workflow.
 
 ## Collaboration flow
 
@@ -56,15 +56,13 @@ sequenceDiagram
     D-->>R: Validated branch, exact commit and PR materials
     R->>G: Create PR as the engineering issuer
     R-->>D: Return PR link
-    D->>D: Independent executor reviews the exact commit
-    D->>G: Formal Review and ordinary merge when requirements pass
     D-->>R: Technical result, cost and remaining obligations
     R-->>B: Research evidence, conclusions and cost
     B-->>A: Return the result along the original request
     A->>A: Validate and record this route's adoption
 ```
 
-Decision groups can also issue engineering tasks directly. The actual engineering issuer creates the PR and receives the technical result. Research judges research evidence; development performs technical review and delivery; decision groups judge progress against the business goal. Each consumer route confirms its own adoption of a shared result.
+Decision groups can also issue engineering tasks directly. The actual issuer creates the PR and receives the technical result. The decision group then judges progress against the business goal, without replacing the receiving group's acceptance. Each consumer route confirms its own adoption of a shared result.
 
 ## Repository guide
 
@@ -110,7 +108,7 @@ Ask me to clarify any unclear goal or necessary trade-off. Recover cross-route r
 Directly issue research or development tasks within authorization. Supervise and correct course during the current execution turn. Report user-reserved matters immediately.
 ```
 
-Tasks, progress, and decisions stay in the project's existing Issues, Projects, and decision records. No local task ledger is created. Supervision runs only during the current execution turn and ends with the final reply; no background service is installed. Development handles business source code. Research writes only to its assigned directories outside the business repository.
+Tasks, progress, and decisions stay in the project's existing Issues, Projects, and decision records. No local task ledger is created. Supervision runs only during the current execution turn and ends with the final reply; no background service is installed. The decision group does not modify business source code or replace research and technical review.
 
 ## Validation
 

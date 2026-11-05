@@ -8,7 +8,7 @@
 
 决策组可以调整授权内顺序、暂停无效重复、组织已有证据形成结论或安排辨别验证。重大目标、验收或已批准方案变化、预算超支、同一动作超过 24 小时、fork／flush 及原合同保留事项立即交用户批准。失败历史、预算消耗和停止条件跨任务与会话延续。
 
-三组职责的唯一公共正文在治理源的 `governance/group-collaboration.md`。开发组全部角色用同一个开发账号，研究组与决策组各用自己的账号；真实账号及目录保存在各组私有绑定。研究可直接签发当前授权内必要工程依赖，结果直接回研究组。PR 由实际签发组创建，开发组维护、独立审查、正式批准、普通合并并收尾。
+治理源维护通用原则与跨组交接协议，各组维护自己的内部流程。决策组使用自己的身份，签发已授权任务并按原路径接收结果。本组是实际工程签发者时，从已交付分支创建 PR 并回传链接，不接管实现或技术审查。
 
 每条路线由一个决策组负责，逻辑参与者、职责和运行环境分别声明。跨环境通过 GitHub 来源任务评论和路线入口交叉引用协作，可访问环境再使用 Agent Center 即时交接。公共任务只有一个主责路线，各路线分别判断是否采用；最初请求方、公共记录维护者和实际工程签发组各保留自己的责任。离线组下次启动时处理记录，沉默不表示接受或停工。
 
@@ -19,8 +19,8 @@
 ```mermaid
 flowchart TD
     U["用户确认的业务目标<br/>授权与项目合同"]
-    P["公共工程原则<br/>codex-governance"]
-    C["三组共同协作规则<br/>codex-governance"]
+    P["通用原则<br/>codex-governance"]
+    C["跨组交接协议<br/>交接时读取"]
     D["决策程序<br/>codex-decision-assistant"]
     R["研究流程<br/>codex-strategy-research"]
     E["开发治理<br/>codex-governance"]
@@ -35,7 +35,7 @@ flowchart TD
     C --> E
 ```
 
-[codex-governance](https://github.com/slowchillchill/codex-governance) 维护公共工程原则 `governance/engineering-principles.md`、跨组协作的唯一正文 `governance/group-collaboration.md`，以及工程闭环 `governance/codex-development-governance.md`。[codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) 维护 `research/research-workflow.md`，负责研究方法、数据用途、证据及独立研究审查。本仓库维护[决策程序](decision/decision-workflow.md)，负责恢复业务目标，在授权内安排优先级、签发、监督及纠偏。
+[codex-governance](https://github.com/slowchillchill/codex-governance) 维护 `governance/common-principles.md` 与交接协议 `governance/group-collaboration.md`，其中的工程原则及开发流程用于工程工作。[codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) 维护研究流程。本仓库维护[决策程序](decision/decision-workflow.md)，负责目标恢复、优先级、签发、监督和结果判断。决策 Skill 读取自身正文和通用原则，交接与传输时按需读取对应协议，不加载另一组的内部流程。
 
 ## 协作流程
 
@@ -56,15 +56,13 @@ sequenceDiagram
     D-->>R: 返回已验证分支、准确提交与 PR 材料
     R->>G: 以实际工程签发组身份创建 PR
     R-->>D: 回传 PR 链接
-    D->>D: 不同执行者独立审查准确提交
-    D->>G: 满足条件后提交正式 Review 并普通合并
     D-->>R: 回传技术结果、成本与剩余义务
     R-->>B: 回传研究证据、结论与成本
     B-->>A: 沿原跨路线请求返回结果
     A->>A: 验证并记录本路线采用情况
 ```
 
-决策组也可直接签发工程任务。实际工程签发组创建 PR 并接收技术结果；研究组判断研究证据，开发组完成技术审查与交付，决策组判断工作对业务目标的贡献。各消费路线分别确认是否采用公共成果。
+决策组也可直接签发工程任务。实际签发组创建 PR 并接收技术结果，决策组据此判断工作对业务目标的贡献，不代替接收组验收。各消费路线分别确认是否采用公共成果。
 
 ## 仓库导航
 
@@ -110,7 +108,7 @@ $codex-decision-assistant
 按授权直接签发研究或开发，在当前执行轮次内监督并纠偏。遇到用户保留事项立即汇报。
 ```
 
-任务、进度和决定沿用项目现有 Issues、Projects 与裁决入口，不建立本地任务账本。监督只在当前执行轮次运行，最终回复后结束；不安装后台服务。业务源码交开发组，研究只写分配的仓库外目录。
+任务、进度和决定沿用项目现有 Issues、Projects 与裁决入口，不建立本地任务账本。监督只在当前执行轮次运行，最终回复后结束；不安装后台服务。决策组不修改业务源码，不代替研究或工程审查。
 
 ## 验证
 

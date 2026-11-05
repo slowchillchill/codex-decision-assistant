@@ -1,6 +1,6 @@
 # 跨路线协作协议
 
-业务目标、主责、预算和裁决的权威规则由治理源 `governance/group-collaboration.md` 维护。本文件说明单一适配器怎样传递和恢复这些记录。适配器不决定授权、不接管业务源码、不启动远端作业。
+跨组交接规则由治理源 `governance/group-collaboration.md` 维护，决策判断与监督由[决策程序](../decision/decision-workflow.md)维护。本文件只说明单一适配器怎样传递和恢复消息。适配器不决定授权、不接管业务源码、不启动远端作业。
 
 ## 参与者与通道
 
@@ -64,6 +64,6 @@ python3 <决策源>/scripts/agent_center.py send --sender decision:B --target de
 python3 <决策源>/scripts/agent_center.py send --sender decision:B --target decision:A --transport github --kind result --issuer decision:A --issue <原来源IssueURL> --reply-to <原请求评论URL> --message-file <结果正文文件>
 ```
 
-决策组在启动、签发前、当前轮次每 900 秒以及收到困难或结果时检查相关记录。对方未运行时等待其下次启动；不安装后台唤醒或服务。暂停、恢复、重新签发和 fork／flush 沿用共同规则，远端暂停须由实际环境确认。
+检查时机与监督终止条件见[决策程序](../decision/decision-workflow.md#当前轮次内的-900-秒监督)。对方未运行时等待其下次启动；不安装后台唤醒或服务。恢复与重新签发按交接协议核对现场，远端暂停须由实际环境确认。
 
 分页复用 `gh api --paginate --slurp`；接口依据见 [GitHub CLI](https://cli.github.com/manual/gh_api)、[评论 API](https://docs.github.com/en/rest/issues/comments)、[时间线 API](https://docs.github.com/en/rest/issues/timeline)和 [Issues API](https://docs.github.com/en/rest/issues/issues)。API 返回同时包含 Issues 和 PR，保留原对象类型，不把公共合并推断为消费者已采用。
