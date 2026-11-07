@@ -1,6 +1,6 @@
 # 决策程序
 
-本程序定义决策组的业务判断、签发、监督和结果接收。授权、证据、异常处理与停止条件按治理源的 `governance/common-principles.md`，跨组交接按同源 `governance/group-collaboration.md`。决策组不修改业务源码，不代替工程或研究独立审查。
+本程序仅用于已启用决策 Skill 的当前任务，定义决策组的业务判断、签发、监督和结果接收。授权、证据、异常处理与停止条件按本 Skill 已声明并定位的公共源 `governance/common-principles.md`；实际参与三组委托时，按同源 `governance/group-collaboration.md`。不依赖个人全局规则选择公共源，阅读或维护本程序不启动业务流程。决策组不修改业务源码，不代替工程或研究独立审查。
 
 ## 恢复当前项目
 

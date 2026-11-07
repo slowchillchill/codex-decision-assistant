@@ -8,18 +8,18 @@ If the goal or a necessary trade-off remains unclear after reading existing reco
 
 Within its authorization, the decision group can reorder work, pause ineffective repetition, draw conclusions from existing evidence, or arrange tests that distinguish competing explanations. Major changes to goals, acceptance criteria, or approved approaches require immediate user approval. So do budget overruns, the same action exceeding 24 hours, fork/flush, and matters reserved by the original contract. Failure history, budget use, and stop conditions carry across tasks and sessions.
 
-The governance source maintains common principles and the cross-group handoff contract. Each group owns its internal workflow. The decision group uses its own identity, issues authorized tasks, and receives results through the original return path. When it is the actual engineering issuer, it creates the PR from the delivered branch and returns the link; it does not take over implementation or technical review.
+The decision Skill explicitly adopts common principles from the governance source and the cross-group handoff contract when participating in that collaboration. Each group owns its internal workflow. The decision group uses its own identity, issues authorized tasks, and receives results through the original return path. When it is the actual engineering issuer, it creates the PR from the delivered branch and returns the link; it does not take over implementation or technical review.
 
 Each route has one decision group. Logical participants, roles, and runtime environments are declared separately. Across environments, groups collaborate through comments on the source GitHub task and cross-references from route entry points. Agent Center provides immediate handoffs when the target environment is accessible. Each shared task has one lead route, while each consumer route decides whether to adopt the result. The original requester, shared-record maintainer, and actual engineering issuer retain their own responsibilities. An offline group processes records when it next starts; silence means neither acceptance nor stopped work.
 
 ## Rule relationships
 
-Arrows show which sources constrain each workflow. User authorization and project contracts bound all three workflows; each retains its own activation rules, writable scope, review, and completion conditions.
+Arrows show the shared dependencies explicitly adopted by these three Skills. User authorization and project contracts bound each active workflow; each retains its own activation rules, writable scope, review, and completion conditions. These dependencies are not global defaults for unrelated tasks or Skills.
 
 ```mermaid
 flowchart TD
     U["User-confirmed goals<br/>authorization and project contracts"]
-    P["Common principles<br/>codex-governance"]
+    P["Common principles<br/>explicit Skill dependency"]
     C["Cross-group handoff contract<br/>read when handing off"]
     D["Decision workflow<br/>codex-decision-assistant"]
     R["Research workflow<br/>codex-strategy-research"]
@@ -35,7 +35,7 @@ flowchart TD
     C --> E
 ```
 
-[codex-governance](https://github.com/slowchillchill/codex-governance) owns `governance/common-principles.md` and the handoff contract `governance/group-collaboration.md`. Its engineering principles and development workflow apply to engineering work. [codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) owns the research workflow. This repository owns [the decision workflow](decision/decision-workflow.md): business-goal recovery, prioritization, task issuance, supervision, and outcome assessment. The decision Skill reads its own workflow and common principles; it reads handoff and transport details when needed, without loading another group's internal workflow.
+[codex-governance](https://github.com/slowchillchill/codex-governance) maintains `governance/common-principles.md`, the handoff contract `governance/group-collaboration.md`, engineering principles, and the development workflow. Each applies only when the selected Skill or project explicitly adopts it. [codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) owns the research workflow. This repository owns [the decision workflow](decision/decision-workflow.md): business-goal recovery, prioritization, task issuance, supervision, and outcome assessment. Once activated, the decision Skill locates its declared common-principle dependency itself and reads its own workflow. It reads handoff and transport details when needed, without loading another group's internal workflow. Reading or maintaining these files does not activate the decision Skill; changing Skills does not reset an existing task's budget, failure history, or outstanding obligations.
 
 ## Collaboration flow
 
@@ -91,7 +91,7 @@ ln -s "$(pwd)/skills/codex-decision-assistant" \
   "$HOME/.agents/skills/codex-decision-assistant"
 ```
 
-Keep the complete checkout: the Skill follows relative links to the decision procedure, protocol, and adapter. If the destination already exists, inspect it before changing it. This user-level entry is shared by Codex profiles running under the same OS user.
+Keep the complete checkout: the Skill follows relative links to the decision procedure, protocol, and adapter. If the destination already exists, inspect it before changing it. This user-level entry is shared by Codex profiles running under the same OS user. No governance-loading instructions need to be added to global `AGENTS.md` or a Profile. This repository's own `AGENTS.md` explicitly adopts common and engineering principles for repository maintenance; that contract does not spread to other projects when the Skill is installed.
 
 Before using real collaboration, follow [the installation guide](docs/installation.md) to prepare private bindings from [the templates](templates/): the governance source and each group's own GitHub identity, then the exact participants and route entry points. GitHub-only targets need no remote App Server; the optional Agent Center channel needs an accessible existing App Server, an exact thread, working directory, and Skill path. Keep real accounts, paths, credentials, and thread bindings outside repositories.
 

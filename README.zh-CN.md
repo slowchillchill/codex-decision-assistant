@@ -8,18 +8,18 @@
 
 决策组可以调整授权内顺序、暂停无效重复、组织已有证据形成结论或安排辨别验证。重大目标、验收或已批准方案变化、预算超支、同一动作超过 24 小时、fork／flush 及原合同保留事项立即交用户批准。失败历史、预算消耗和停止条件跨任务与会话延续。
 
-治理源维护通用原则与跨组交接协议，各组维护自己的内部流程。决策组使用自己的身份，签发已授权任务并按原路径接收结果。本组是实际工程签发者时，从已交付分支创建 PR 并回传链接，不接管实现或技术审查。
+决策 Skill 明确采用治理源的通用原则，参与三组协作交接时再采用对应协议；各组维护自己的内部流程。决策组使用自己的身份，签发已授权任务并按原路径接收结果。本组是实际工程签发者时，从已交付分支创建 PR 并回传链接，不接管实现或技术审查。
 
 每条路线由一个决策组负责，逻辑参与者、职责和运行环境分别声明。跨环境通过 GitHub 来源任务评论和路线入口交叉引用协作，可访问环境再使用 Agent Center 即时交接。公共任务只有一个主责路线，各路线分别判断是否采用；最初请求方、公共记录维护者和实际工程签发组各保留自己的责任。离线组下次启动时处理记录，沉默不表示接受或停工。
 
 ## 规则关系
 
-箭头表示哪些依据约束各工作流。用户授权和项目合同约束全部三个流程；每个流程分别保留自己的启用条件、可写范围、审查和完成条件。
+箭头表示这三个 Skill 明确采用的共享依赖。用户授权和项目合同约束各自已启用的流程；每个流程分别保留自己的启用条件、可写范围、审查和完成条件。这些依赖不是其他任务或 Skill 的全局默认规则。
 
 ```mermaid
 flowchart TD
     U["用户确认的业务目标<br/>授权与项目合同"]
-    P["通用原则<br/>codex-governance"]
+    P["通用原则<br/>各 Skill 明确声明的依赖"]
     C["跨组交接协议<br/>交接时读取"]
     D["决策程序<br/>codex-decision-assistant"]
     R["研究流程<br/>codex-strategy-research"]
@@ -35,7 +35,7 @@ flowchart TD
     C --> E
 ```
 
-[codex-governance](https://github.com/slowchillchill/codex-governance) 维护 `governance/common-principles.md` 与交接协议 `governance/group-collaboration.md`，其中的工程原则及开发流程用于工程工作。[codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) 维护研究流程。本仓库维护[决策程序](decision/decision-workflow.md)，负责目标恢复、优先级、签发、监督和结果判断。决策 Skill 读取自身正文和通用原则，交接与传输时按需读取对应协议，不加载另一组的内部流程。
+[codex-governance](https://github.com/slowchillchill/codex-governance) 维护 `governance/common-principles.md`、交接协议 `governance/group-collaboration.md`、工程原则及开发流程；各文件只在所选 Skill 或项目明确采用时适用。[codex-strategy-research](https://github.com/slowchillchill/codex-strategy-research) 维护研究流程。本仓库维护[决策程序](decision/decision-workflow.md)，负责目标恢复、优先级、签发、监督和结果判断。决策 Skill 启用后自行定位已声明的通用原则依赖，读取自身正文，交接与传输时按需读取对应协议，不加载另一组的内部流程。阅读或维护这些文件不启动决策流程；切换 Skill 不清零原任务预算、失败事实或尚未履行的义务。
 
 ## 协作流程
 
@@ -91,7 +91,7 @@ ln -s "$(pwd)/skills/codex-decision-assistant" \
   "$HOME/.agents/skills/codex-decision-assistant"
 ```
 
-保留整个工作树，Skill 会通过相对链接读取决策程序、协议和适配器。目标入口已存在时，先检查其内容再调整。同一系统用户下的多个 Codex 配置共用这个用户级入口。
+保留整个工作树，Skill 会通过相对链接读取决策程序、协议和适配器。目标入口已存在时，先检查其内容再调整。同一系统用户下的多个 Codex 配置共用这个用户级入口。无需向全局 `AGENTS.md` 或 Profile 写入治理加载要求。本仓库自己的 `AGENTS.md` 明确采用公共及工程原则作为仓库维护合同，该合同不随 Skill 安装扩展到其他项目。
 
 实际协作前，按[安装说明](docs/installation.md)从[模板](templates/)准备仓库外私有绑定：先指定治理源及各组独立 GitHub 身份，再填写准确参与者和路线入口。纯 GitHub 目标无需远端 App Server；可选的 Agent Center 通道需要已可访问的 App Server、准确线程、工作目录和 Skill 路径。真实账号、路径、认证材料和线程绑定保存在仓库外。
 

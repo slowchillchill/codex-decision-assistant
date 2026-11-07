@@ -1,6 +1,6 @@
 # 本地安装与启用
 
-保留完整决策源与兼容治理源。Skill 从自己的真实路径读取决策程序，治理源提供通用原则、交接协议和 `scripts/group_github.py`，决策源提供单一协作适配器；接收组按自己的安装说明准备环境。Python 脚本需要 Python 3.11+，GitHub 通道使用支持 `gh api --paginate --slurp` 的 GitHub CLI；本地即时通道另需 `websocket-client`，当前验证版本为 1.8.0。仅使用 GitHub 通道时不加载该依赖。
+保留完整决策源与兼容治理源。治理源提供本 Skill 明确声明的公共原则、按需采用的三组交接协议和 `scripts/group_github.py`；它们是本 Skill 的依赖，不是所有 Codex 任务的默认规则。Skill 启用后从自己的真实路径读取决策程序，决策源提供单一协作适配器；接收组按自己的安装说明准备环境。Python 脚本需要 Python 3.11+，GitHub 通道使用支持 `gh api --paginate --slurp` 的 GitHub CLI；本地即时通道另需 `websocket-client`，当前验证版本为 1.8.0。仅使用 GitHub 通道时不加载该依赖。
 
 ## 先完成本地核对
 
@@ -8,7 +8,9 @@
 
 从 `templates/local.example.toml` 准备仓库外决策绑定；优先使用非空 `CODEX_DECISION_ASSISTANT_CONFIG`，否则 `${XDG_CONFIG_HOME:-$HOME/.config}/codex-decision-assistant/local.toml`。填写 `paths.source_root` 与 `github.decision` 的真实登录名和认证目录，不提交填写后的文件。
 
-决策身份不借用其他组的登录名或目录，公开模板只保留占位符；旧控制／实现账号表不回退。通用原则只从治理绑定的 `paths.source_root` 下读取 `governance/common-principles.md`，交接时再读同源 `governance/group-collaboration.md`，不要求决策流程完整读取工程原则。升级保留既有证据归档、知识库及个性化模型与权限字段，不覆盖认证文件或切换全局活动账号。
+按 [Skill 的依赖声明](../skills/codex-decision-assistant/SKILL.md)准备公共源绑定：使用非空 `CODEX_GOVERNANCE_CONFIG`，否则 `${XDG_CONFIG_HOME:-$HOME/.config}/codex-governance/local.toml`，以其 `paths.source_root` 指向兼容治理源。运行时由 Skill 自行定位并读取 `governance/common-principles.md`；实际参与三组委托时再读同源 `governance/group-collaboration.md`，不要求决策流程读取工程原则或开发流程。无需向个人全局 `AGENTS.md` 写入治理源路径或加载要求，Profile 也不替 Skill 加载规则。
+
+决策身份不借用其他组的登录名或目录，公开模板只保留占位符；旧控制／实现账号表不回退。升级保留既有证据归档、知识库及个性化模型与权限字段，不覆盖认证文件或切换全局活动账号。本仓库的 `AGENTS.md` 明确采用公共及工程原则作为维护合同；它只约束本仓库维护，不随 Skill 安装扩展到其他项目。
 
 每次平台操作使用治理源脚本。下列 `<治理源>` 由私有绑定取得：
 
@@ -20,7 +22,7 @@ python3 <治理源>/scripts/group_github.py --group decision gh -- pr view <准�
 
 脚本每次排除 `GH_TOKEN`、`GITHUB_TOKEN` 等覆盖，设置绑定目录并核验实际登录名。决策组不推送业务分支；仅在本组是实际签发者时按交接协议创建已交付分支的 PR。
 
-运行 `python3 -m unittest discover -s tests -v` 做本地协议验证，并核对决策绑定、Skill 元数据、链接与适用的独立行为结果。新会话核对实际加载，磁盘更新不能证明旧会话已生效；其他组的安装与更新由接收组处理。
+运行 `python3 -m unittest discover -s tests -v` 做本地协议验证，并核对决策绑定、Skill 元数据、链接与适用的独立行为结果。新会话分别核对未调用、明确调用和仅阅读维护的场景：未调用时不采用本 Skill 的规则，调用时自行定位声明的依赖，仅阅读维护不启动监督。磁盘更新不能证明旧会话已生效；其他组的安装与更新由接收组处理。
 
 ## 启用阶段再填写真实协作
 

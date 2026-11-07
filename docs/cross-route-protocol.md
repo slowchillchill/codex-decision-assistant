@@ -1,6 +1,6 @@
 # 跨路线协作协议
 
-跨组交接规则由治理源 `governance/group-collaboration.md` 维护，决策判断与监督由[决策程序](../decision/decision-workflow.md)维护。本文件只说明单一适配器怎样传递和恢复消息。适配器不决定授权、不接管业务源码、不启动远端作业。
+实际参与决策、研究、开发三组委托时，交接规则由所选 Skill 已声明并定位的公共源 `governance/group-collaboration.md` 维护，决策判断与监督由[决策程序](../decision/decision-workflow.md)维护。本文件只说明单一适配器怎样传递和恢复消息，不把普通任务分工纳入三组委托。适配器不决定授权、不接管业务源码、不启动远端作业。
 
 ## 参与者与通道
 
